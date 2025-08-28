@@ -9,6 +9,7 @@ import java.time.temporal.TemporalQuery;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Support conversion of temporal values to/from iCalendar string representations.
@@ -169,10 +170,10 @@ import java.util.Objects;
  */
 public class CalendarDateFormat implements Serializable {
 
-    public static class LocalDateTemporalQuery implements TemporalQuery<LocalDate>, Serializable {
+    public static class OptionalLocalDateTemporalQuery implements TemporalQuery<Optional<LocalDate>>, Serializable {
         @Override
-        public LocalDate queryFrom(TemporalAccessor temporal) {
-            return LocalDate.from(temporal);
+        public Optional<LocalDate> queryFrom(TemporalAccessor temporal) {
+            return OptionalTemporalAccessorProducer.localDate(temporal);
         }
 
         @Override
@@ -182,10 +183,10 @@ public class CalendarDateFormat implements Serializable {
         }
     }
 
-    public static class LocalDateTimeTemporalQuery implements TemporalQuery<LocalDateTime>, Serializable {
+    public static class OptionalLocalDateTimeTemporalQuery implements TemporalQuery<Optional<LocalDateTime>>, Serializable {
         @Override
-        public LocalDateTime queryFrom(TemporalAccessor temporal) {
-            return LocalDateTime.from(temporal);
+        public Optional<LocalDateTime> queryFrom(TemporalAccessor temporal) {
+            return OptionalTemporalAccessorProducer.localDateTime(temporal);
         }
 
         @Override
@@ -195,10 +196,10 @@ public class CalendarDateFormat implements Serializable {
         }
     }
 
-    public static class OffsetDateTimeTemporalQuery implements TemporalQuery<OffsetDateTime>, Serializable {
+    public static class OptionalOffsetDateTimeTemporalQuery implements TemporalQuery<Optional<OffsetDateTime>>, Serializable {
         @Override
-        public OffsetDateTime queryFrom(TemporalAccessor temporal) {
-            return OffsetDateTime.from(temporal);
+        public Optional<OffsetDateTime> queryFrom(TemporalAccessor temporal) {
+            return OptionalTemporalAccessorProducer.offsetDateTime(temporal);
         }
 
         @Override
@@ -208,37 +209,68 @@ public class CalendarDateFormat implements Serializable {
         }
     }
 
-    public static class InstantTemporalQuery implements TemporalQuery<Instant>, Serializable {
+    public static class OptionalInstantTemporalQuery implements TemporalQuery<Optional<Instant>>, Serializable {
         @Override
-        public Instant queryFrom(TemporalAccessor temporal) {
-            return Instant.from(temporal);
+        public Optional<Instant> queryFrom(TemporalAccessor temporal) {
+            return OptionalTemporalAccessorProducer.instant(temporal);
         }
 
         @Override
         public boolean equals(Object obj) {
             if (this == obj) return true;
+            return obj != null && getClass() == obj.getClass();
+        }
+    }
+
+    /**
+     * This class is to prevent the needed usage of {@link DateTimeFormatter#parseBest(CharSequence, TemporalQuery[])}
+     * The exceptions it throws can be very expensive to create
+     */
+    public static class ParseBestOptional implements TemporalQuery<TemporalAccessor>, Serializable {
+        private final TemporalQuery<? extends Optional<? extends TemporalAccessor>>[] parsers;
+
+        @SafeVarargs
+        public ParseBestOptional(TemporalQuery<? extends Optional<? extends TemporalAccessor>>... parsers) {
+            this.parsers = parsers;
+        }
+
+        @Override
+        public TemporalAccessor queryFrom(TemporalAccessor temporal) {
+            for (TemporalQuery<? extends Optional<? extends TemporalAccessor>> parser : parsers) {
+                Optional<? extends TemporalAccessor> optional = parser.queryFrom(temporal);
+                if (optional.isPresent()) {
+                    return optional.get();
+                }
+            }
+            throw new DateTimeException("Unable to convert parsed text using any of the specified queries");
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
             return obj != null && getClass() == obj.getClass();
         }
     }
 
     public static final CalendarDateFormat DATE_FORMAT = new CalendarDateFormat(
-            "yyyyMMdd", new LocalDateTemporalQuery());
+            "yyyyMMdd", new ParseBestOptional(new OptionalLocalDateTemporalQuery()));
 
     public static final CalendarDateFormat FLOATING_DATE_TIME_FORMAT = new CalendarDateFormat(
-            "yyyyMMdd'T'HHmmss", new LocalDateTimeTemporalQuery());
+            "yyyyMMdd'T'HHmmss", new ParseBestOptional(new OptionalLocalDateTimeTemporalQuery()));
 
     public static final CalendarDateFormat UTC_DATE_TIME_FORMAT = new CalendarDateFormat(
-            "yyyyMMdd'T'HHmmss'Z'", new InstantTemporalQuery());
+            "yyyyMMdd'T'HHmmss'Z'", new ParseBestOptional(new OptionalInstantTemporalQuery()));
 
     public static final CalendarDateFormat RELAXED_DATE_TIME_FORMAT = new CalendarDateFormat(
-            "yyyyMMdd'T'HHmmss[X]", new OffsetDateTimeTemporalQuery(), new LocalDateTimeTemporalQuery());
+            "yyyyMMdd'T'HHmmss[X]", new ParseBestOptional(new OptionalOffsetDateTimeTemporalQuery(), new OptionalLocalDateTimeTemporalQuery()));
 
     /**
      * A formatter capable of parsing to multiple temporal types based on the input string.
      */
     public static final CalendarDateFormat DEFAULT_PARSE_FORMAT = new CalendarDateFormat(
-            "yyyyMMdd['T'HHmmss[X]]", new OffsetDateTimeTemporalQuery(), new LocalDateTimeTemporalQuery(),
-            new LocalDateTemporalQuery());
+            "yyyyMMdd['T'HHmmss[X]]", new ParseBestOptional(new OptionalOffsetDateTimeTemporalQuery(), new OptionalLocalDateTimeTemporalQuery(),
+            new OptionalLocalDateTemporalQuery()));
 
     private final String pattern;
 
