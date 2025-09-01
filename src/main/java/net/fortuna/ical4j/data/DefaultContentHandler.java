@@ -85,7 +85,9 @@ public class DefaultContentHandler implements ContentHandler {
 
     @Override
     public void endCalendar() {
-        ZoneRulesProvider.registerProvider(new ZoneRulesProviderImpl(tzRegistry));
+        if (!tzRegistry.getZoneRules().isEmpty()) {
+            ZoneRulesProvider.registerProvider(new ZoneRulesProviderImpl(tzRegistry));
+        }
         consumer.accept(new Calendar(new PropertyList(calendarProperties),
                 new ComponentList<>(calendarComponents)));
     }
