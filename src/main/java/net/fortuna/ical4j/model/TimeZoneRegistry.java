@@ -38,6 +38,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * $Id$
@@ -54,14 +55,19 @@ public interface TimeZoneRegistry {
 
     Map<String, String> ZONE_ALIASES = new ConcurrentHashMap<>();
 
+    AtomicBoolean initialized = new AtomicBoolean(false);
+
     static ZoneId getGlobalZoneId(String tzId) {
         Objects.requireNonNull(tzId, "tzId");
-        // Ensure zone rules are loaded..
-        Set<String> ids = ZoneId.getAvailableZoneIds();
-        try {
-            Class.forName(TimeZoneRegistryImpl.class.getCanonicalName());
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+        if (!initialized.get()) {
+            // Ensure zone rules are loaded..
+            Set<String> ids = ZoneId.getAvailableZoneIds();
+            try {
+                Class.forName(TimeZoneRegistryImpl.class.getCanonicalName());
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+            initialized.set(true);
         }
         ZoneId zoneId = ZoneId.of(tzId, ZONE_ALIASES);
         Optional<Map.Entry<String, String>> lookup = ZONE_IDS.entrySet().stream().filter(entry ->
