@@ -34,7 +34,6 @@ package net.fortuna.ical4j.validate;
 import net.fortuna.ical4j.model.Component;
 import net.fortuna.ical4j.model.ComponentContainer;
 import net.fortuna.ical4j.model.ComponentList;
-import net.fortuna.ical4j.model.Property;
 import net.fortuna.ical4j.model.component.*;
 import net.fortuna.ical4j.model.parameter.Value;
 import net.fortuna.ical4j.model.property.DateProperty;
@@ -50,10 +49,44 @@ import static net.fortuna.ical4j.model.property.immutable.ImmutableStatus.*;
 import static net.fortuna.ical4j.validate.ValidationRule.ValidationType.*;
 
 /**
+ * A validator for iCalendar components, providing a set of validation rules
+ * for various iCalendar component types.
+ * <p>
+ * This class extends {@link AbstractValidator} and implements {@link ContentValidator}.
+ * It provides static instances for validating specific component types such as
+ * {@link Available}, {@link Participant}, {@link VAvailability}, {@link VEvent},
+ * {@link VFreeBusy}, {@link VJournal}, {@link VLocation}, {@link VResource},
+ * {@link VTimeZone}, {@link VToDo}, {@link VVenue}, {@link Observance},
+ * and {@link VAlarm}. Each static instance is configured with specific
+ * validation rules that are applied to the respective component type.
+ * <p>
+ * The validation rules include checks for required properties, optional properties,
+ * exclusive properties, and specific conditions such as date-time values.
+ * The class also provides methods for asserting the absence or presence of components
+ * within a component list, which throw exceptions if the assertions fail.
+ * <p>
+ * This class is designed to be used in the context of validating iCalendar data
+ * structures, ensuring that they conform to the iCalendar specification and
+ * the specific requirements of each component type.
+ * <p>
+ * Example usage:
+ * <pre>
+ * ComponentValidator<VEvent> eventValidator = ComponentValidator.VEVENT;
+ * VEvent event = new VEvent();
+ * // Set properties on the event...
+ * ValidationResult result = eventValidator.validate(event);
+ * if (!result.isValid()) {
+ *     // Handle validation errors
+ *     for (ValidationEntry entry : result.getEntries()) {
+ *         System.out.println(entry.getMessage());
+ *     }
+ * }
+ * </pre>
+ *
  * @author Ben
  *
  */
-public class ComponentValidator<T extends Component> extends AbstractValidator<T> implements ContentValidator<Property> {
+public class ComponentValidator<T extends Component> extends AbstractValidator<T> implements ContentValidator {
 
     public static final ComponentValidator<Available> AVAILABLE = new ComponentValidator<>(Component.AVAILABLE,
             new ValidationRule<>(One, DTSTART, DTSTAMP, UID),
@@ -95,8 +128,8 @@ public class ComponentValidator<T extends Component> extends AbstractValidator<T
                     DTSTART, DTEND));
 
     public static final ComponentValidator<VJournal> VJOURNAL = new ComponentValidator<>(Component.VJOURNAL,
-            new ValidationRule<>(One, DTSTART, DTSTAMP, UID),
-            new ValidationRule<>(OneOrLess, BUSYTYPE, CREATED, LAST_MODIFIED, ORGANIZER, SEQUENCE, SUMMARY, URL),
+            new ValidationRule<>(One, DTSTAMP, UID),
+            new ValidationRule<>(OneOrLess, DTSTART, BUSYTYPE, CREATED, LAST_MODIFIED, ORGANIZER, SEQUENCE, SUMMARY, URL),
             new ValidationRule<>(OneExclusive, DTEND, DURATION),
             new ValidationRule<>((Predicate<VJournal> & Serializable) a -> a.getProperties(STATUS).stream()
                     .anyMatch(p -> !(VJOURNAL_DRAFT.equals(p) || VJOURNAL_FINAL.equals(p)
@@ -116,9 +149,9 @@ public class ComponentValidator<T extends Component> extends AbstractValidator<T
             new ValidationRule<>(OneOrLess, LAST_MODIFIED, TZURL));
 
     public static final ComponentValidator<VToDo> VTODO = new ComponentValidator<>(Component.VTODO,
-            new ValidationRule<>(One, true, UID),
+            new ValidationRule<>(One, true, UID, DTSTAMP),
             new ValidationRule<>(OneOrLess, CLASS, COMPLETED, CREATED, DESCRIPTION,
-                    DTSTAMP, DTSTART, GEO, LAST_MODIFIED, LOCATION, ORGANIZER,
+                    DTSTART, GEO, LAST_MODIFIED, LOCATION, ORGANIZER,
                     PERCENT_COMPLETE, PRIORITY, RECURRENCE_ID, SEQUENCE, STATUS,
                     SUMMARY, UID, URL),
             new ValidationRule<>(OneExclusive, DUE, DURATION));
@@ -174,7 +207,7 @@ public class ComponentValidator<T extends Component> extends AbstractValidator<T
      * @param componentName a component name used in the assertion
      * @param components a list of components
      * @throws ValidationException where the assertion fails
-     * @deprecated see {@link ContentValidator#assertNone(String, List, boolean)}
+     * @deprecated see {@link ContentValidator#assertNone(String, java.util.List, boolean)}
      */
     @Deprecated
     public static void assertNone(String componentName, ComponentList<?> components) throws ValidationException {
@@ -186,7 +219,7 @@ public class ComponentValidator<T extends Component> extends AbstractValidator<T
      * @param componentName a component name used in the assertion
      * @param components a list of components
      * @throws ValidationException where the assertion fails
-     * @deprecated see {@link ContentValidator#assertOneOrLess(String, List, boolean)}
+     * @deprecated see {@link ContentValidator#assertOneOrLess(String, java.util.List, boolean)}
      */
     @Deprecated
     public static void assertOneOrLess(String componentName, ComponentList<?> components) throws ValidationException {

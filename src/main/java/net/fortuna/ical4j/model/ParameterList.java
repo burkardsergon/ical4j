@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2012, Ben Fortuna
  * All rights reserved.
  *
@@ -31,7 +31,7 @@
  */
 package net.fortuna.ical4j.model;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -39,11 +39,10 @@ import java.util.stream.Collectors;
 
 /**
  * $Id$ [Apr 5, 2004]
- *
  * Accessor implementation for a list of iCalendar parameters.
  * @author Ben Fortuna
  */
-public class ParameterList implements ContentCollection<Parameter>, Comparable<ParameterList> {
+public class ParameterList implements ContentCollection<Parameter, ParameterList>, Comparable<ParameterList> {
 
     private final List<Parameter> parameters;
 
@@ -58,26 +57,26 @@ public class ParameterList implements ContentCollection<Parameter>, Comparable<P
      * Creates an unmodifiable copy of the specified parameter list.
      * @param list a parameter list to copy parameters from
      */
-    public ParameterList(@NotNull List<Parameter> list) {
+    public ParameterList(@NonNull List<Parameter> list) {
         this.parameters = Collections.unmodifiableList(list);
     }
 
     @Override
-    public ContentCollection<Parameter> add(Parameter content) {
+    public ParameterList add(Parameter content) {
         List<Parameter> copy = new ArrayList<>(parameters);
         copy.add(content);
         return new ParameterList(copy);
     }
 
     @Override
-    public ContentCollection<Parameter> addAll(@NotNull Collection<Parameter> content) {
+    public ParameterList addAll(@NonNull Collection<Parameter> content) {
         List<Parameter> copy = new ArrayList<>(parameters);
         copy.addAll(content);
         return new ParameterList(copy);
     }
 
     @Override
-    public ContentCollection<Parameter> remove(Parameter content) {
+    public ParameterList remove(Parameter content) {
         List<Parameter> copy = new ArrayList<>(parameters);
         if (copy.remove(content)) {
             return new ParameterList(copy);
@@ -87,13 +86,13 @@ public class ParameterList implements ContentCollection<Parameter>, Comparable<P
     }
 
     @Override
-    public ContentCollection<Parameter> removeAll(String... name) {
+    public ParameterList removeAll(String... name) {
         List<String> names = Arrays.asList(name);
         return removeIf(p -> names.contains(p.getName()));
     }
 
     @Override
-    public ContentCollection<Parameter> removeIf(Predicate<Parameter> filter) {
+    public ParameterList removeIf(Predicate<Parameter> filter) {
         List<Parameter> copy = new ArrayList<>(parameters);
         if (copy.removeIf(filter)) {
             return new ParameterList(copy);
@@ -103,9 +102,9 @@ public class ParameterList implements ContentCollection<Parameter>, Comparable<P
     }
 
     @Override
-    public ContentCollection<Parameter> replace(@NotNull Parameter content) {
+    public ParameterList replace(@NonNull Parameter content) {
         List<Parameter> copy = new ArrayList<>(parameters);
-        copy.removeIf(p -> p.getName().equals(content.getName()));
+        copy.removeIf(p -> p.getName().equalsIgnoreCase(content.getName()));
         copy.add(content);
         return new ParameterList(copy);
     }
@@ -175,9 +174,10 @@ public class ParameterList implements ContentCollection<Parameter>, Comparable<P
         if (retval != 0) {
             return retval;
         } else {
-            // compare individual params..
-            return parameters.stream().filter(o.parameters::contains)
-                    .mapToInt(p -> p.compareTo(o.parameters.get(o.parameters.indexOf(p)))).sum();
+            // count missing params..
+            return (int) o.parameters.stream().filter(p -> !parameters.contains(p)).count();
+//            return parameters.stream().filter(o.parameters::contains)
+//                    .mapToInt(p -> p.compareTo(o.parameters.get(o.parameters.indexOf(p)))).sum();
         }
     }
 }

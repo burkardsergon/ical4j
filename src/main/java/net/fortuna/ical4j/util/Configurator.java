@@ -59,9 +59,13 @@ public final class Configurator {
 
         boolean isLoaded;
         try (var in = ResourceLoader.getResourceAsStream("ical4j.properties")) {
-            CONFIG.load(in);
-            isLoaded = true;
-        } catch (IOException | NullPointerException e) {
+            if (in == null) {
+                isLoaded = false;
+            } else {
+                CONFIG.load(in);
+                isLoaded = true;
+            }
+        } catch (IOException e) {
             // defer logging until properties are loaded to avoid potential
             // reference to uninitialized config
             isLoaded = false;
@@ -110,7 +114,7 @@ public final class Configurator {
         Optional<String> property = getProperty(key);
         if (property.isPresent()) {
             try {
-                return Optional.of(Enum.valueOf(clazz, property.get()));
+                return Optional.of(Enums.parse(clazz, property.get()));
             } catch (IllegalArgumentException iae) {
                 LOG.error(String.format("Invalid configuration value: %s", key), iae);
                 return Optional.empty();

@@ -8,13 +8,17 @@ import net.fortuna.ical4j.model.parameter.TzId;
 import net.fortuna.ical4j.util.Constants;
 import org.slf4j.LoggerFactory;
 
-import java.time.zone.ZoneRulesProvider;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+/**
+ * Default implementation of a {@link ContentHandler} that builds a {@link Calendar} object from an iCalendar data stream.
+ * This implementation supports nested components and properties, and allows for custom handling of time zones.
+ * It also provides a context for customization through the {@link ContentHandlerContext}.
+ */
 public class DefaultContentHandler implements ContentHandler {
 
     private final ContentHandlerContext context;
@@ -85,11 +89,9 @@ public class DefaultContentHandler implements ContentHandler {
 
     @Override
     public void endCalendar() {
-        if (!tzRegistry.getZoneRules().isEmpty()) {
-            ZoneRulesProvider.registerProvider(new ZoneRulesProviderImpl(tzRegistry));
-        }
-        consumer.accept(new Calendar(new PropertyList(calendarProperties),
-                new ComponentList<>(calendarComponents)));
+        Calendar calendar = new Calendar(new PropertyList(calendarProperties),
+                new ComponentList<>(calendarComponents));
+        consumer.accept(calendar);
     }
 
     @Override
@@ -180,9 +182,9 @@ public class DefaultContentHandler implements ContentHandler {
 
             if (parameter instanceof TzId) {
                 if (getComponentBuilder() != null && (getComponentBuilder().hasName(Observance.STANDARD)
-                        || getComponentBuilder().hasName(Observance.DAYLIGHT))
-                        && propertyBuilder.hasName(Property.DTSTART)) {
-                    // we don't allow TZID parameter in VTIMEZONE definitions as it causes StackOverflowError..
+                        || getComponentBuilder().hasName(Observance.DAYLIGHT))) {
+                    // we don't allow TZID parameter in ANY properties VTIMEZONE definitions as it causes StackOverflowError..
+                    // e.g. DTSTART, RDATE, etc.
                     return;
                 }
             }

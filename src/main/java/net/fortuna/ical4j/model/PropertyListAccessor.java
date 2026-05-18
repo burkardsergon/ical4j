@@ -1,10 +1,16 @@
 package net.fortuna.ical4j.model;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Interface for accessing a list of properties.
+ * Provides methods to retrieve properties by name, including convenience methods for required properties.
+ *
+ * @see PropertyList
+ */
 public interface PropertyListAccessor {
 
     PropertyList getPropertyList();
@@ -17,7 +23,7 @@ public interface PropertyListAccessor {
         return getPropertyList().getFirst(name);
     }
 
-    default <T extends Property> Optional<T> getProperty(@NotNull final Enum<?> name) {
+    default <T extends Property> Optional<T> getProperty(@NonNull final Enum<?> name) {
         return getProperty(name.toString());
     }
 
@@ -32,7 +38,7 @@ public interface PropertyListAccessor {
         return getPropertyList().getRequired(name);
     }
 
-    default <T extends Property> T getRequiredProperty(@NotNull Enum<?> name) throws ConstraintViolationException {
+    default <T extends Property> T getRequiredProperty(@NonNull Enum<?> name) throws ConstraintViolationException {
         return getRequiredProperty(name.toString());
     }
 }

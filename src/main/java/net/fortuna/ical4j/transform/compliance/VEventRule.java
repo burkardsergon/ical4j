@@ -46,8 +46,19 @@ import java.time.Period;
 import java.time.temporal.Temporal;
 import java.util.Optional;
 
+import static net.fortuna.ical4j.model.Property.*;
+
 /**
- * 
+ * A rule that applies compliance transformations to VEvent elements.
+ * This rule ensures that:
+ * <ol>
+ * <li>If both 'dtend' and 'duration' properties are present, 'duration' is removed.
+ * <li>If the event is an all-day event (both 'dtstart' and 'dtend' are of type DATE and equal),
+ *    'dtend' is adjusted to be one day after 'dtstart'.
+ * <li>If 'dtstamp' is not present, it is added with the current timestamp.
+ * </ol>
+ * This rule is based on RFC 5545 compliance requirements.
+ *
  * @author daniel grigore
  * @author corneliu dobrota
  * @author stefan popescu
@@ -57,9 +68,9 @@ public class VEventRule implements Rfc5545ComponentRule<VEvent> {
 
     @Override
     public VEvent apply(VEvent element) {
-        Optional<DtStart<Temporal>> start = element.getDateTimeStart();
-        Optional<DtEnd<Temporal>> end = element.getDateTimeEnd();
-        Optional<Duration> duration = element.getDuration();
+        Optional<DtStart<Temporal>> start = element.getProperty(DTSTART);
+        Optional<DtEnd<Temporal>> end = element.getProperty(DTEND);
+        Optional<Duration> duration = element.getProperty(DURATION);
         
         /*
          *     ; Either 'dtend' or 'duration' MAY appear in
@@ -86,7 +97,7 @@ public class VEventRule implements Rfc5545ComponentRule<VEvent> {
             }
         }
         
-        if (element.getDateTimeStamp().isEmpty()) {
+        if (element.getProperty(DTSTAMP).isEmpty()) {
             element.with(ChangeManagementPropertyModifiers.DTSTAMP, Instant.now());
         }     
         return element;

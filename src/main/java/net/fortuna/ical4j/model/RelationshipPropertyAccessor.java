@@ -37,31 +37,70 @@ import net.fortuna.ical4j.model.property.*;
 
 import java.time.temporal.Temporal;
 import java.util.List;
-import java.util.Optional;
 
+/**
+ * An interface for accessing properties related to relationships in iCalendar objects.
+ * This includes properties such as attendees, contact, organizer, recurrence ID, related to, and URL.
+ *
+ * @see <a href="https://icalendar.org/iCalendar-RFC-5545/3-8-Relationship-Properties.html">RFC 5545 - 3.8 Relationship Properties</a>
+ */
 public interface RelationshipPropertyAccessor extends PropertyContainer {
 
+    /**
+     *
+     * @return
+     */
     default List<Attendee> getAttendees() {
         return getProperties(Property.ATTENDEE);
     }
 
-    default Optional<Contact> getContact() {
-        return getProperty(Property.CONTACT);
+    /**
+     *
+     * @return
+     * @throws ConstraintViolationException if the property is not present
+     */
+    default Contact getContact() {
+        return (Contact) getProperty(Property.CONTACT).orElse(null);
     }
 
-    default Optional<Organizer> getOrganizer() {
-        return getProperty(Property.ORGANIZER);
+    /**
+     *
+     * @return
+     * @throws ConstraintViolationException if the property is not present
+     */
+    default Organizer getOrganizer() {
+        return (Organizer) getProperty(Property.ORGANIZER).orElse(null);
     }
 
-    default <T extends Temporal> Optional<RecurrenceId<T>> getRecurrenceId() {
-        return getProperty(Property.RECURRENCE_ID);
+    /**
+     *
+     * @return
+     * @param <T>
+     * @throws ConstraintViolationException if the property is not present
+     */
+    default <T extends Temporal> RecurrenceId<T> getRecurrenceId() {
+        return (RecurrenceId<T>) getProperty(Property.RECURRENCE_ID).orElse(null);
     }
 
-    default Optional<RelatedTo> getRelatedTo() {
-        return getProperty(Property.RELATED_TO);
+    /**
+     *
+     * @return
+     * @throws ConstraintViolationException if the property is not present
+     */
+    default RelatedTo getRelatedTo() {
+        return (RelatedTo) getProperty(Property.RELATED_TO).orElse(null);
     }
 
-    default Optional<Url> getUrl() {
-        return getProperty(Property.URL);
+    /**
+     *
+     * @return
+     * @throws ConstraintViolationException if the property is not present
+     */
+    default Url getUrl() {
+        return (Url) getProperty(Property.URL).orElse(null);
+    }
+
+    default List<Link> getLinks() {
+        return getProperties(Link.PROPERTY_NAME);
     }
 }
