@@ -41,13 +41,27 @@ import net.fortuna.ical4j.model.property.DateProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 
 /**
- * 
+ *
+ * Helper class for dealing with timezones in compliance rules.
+ * This class provides methods to correct timezone parameters in properties
+ * and to retrieve valid timezone IDs based on Microsoft time zone identifiers.
+ * It initializes a registry of time zones and maps Microsoft time zone names
+ * and IDs to standard time zone IDs.
+ * <p>The class is designed to handle time zone corrections for properties
+ * such as {@link Property} and {@link DateProperty},
+ * ensuring that the time zone identifiers conform to the standards defined in RFC 5545.
+ * <p>It also provides a method to retrieve a valid time zone ID based on a given time zone value,
+ * which can be a Microsoft time zone ID or an invalid time zone value.
+ * <p>This class is part of the compliance transformation rules for iCalendar data,
+ * ensuring that time zone information is correctly handled and standardized across different implementations.
+ *
  * @author corneliu dobrota
  * @author daniel grigore
  *
@@ -70,7 +84,9 @@ public class TzHelper {
     }
 
     private static void initMsTimezones() {
-        try (var scanner = new Scanner(TzHelper.class.getResourceAsStream(MS_TIMEZONES_FILE))) {
+        // Note: Scanner(InputStream, Charset) is not available on Android versions prior to Android 14.
+        //noinspection CharsetObjectCanBeUsed
+        try (var scanner = new Scanner(TzHelper.class.getResourceAsStream(MS_TIMEZONES_FILE), "UTF-8")) {
             while (scanner.hasNext()) {
                 var arr = scanner.nextLine().split("=");
                 var standardTzId = arr[1];
@@ -85,7 +101,7 @@ public class TzHelper {
     }
 
     static void correctTzParameterFrom(Property property) {
-        if (!property.getParameter(Parameter.TZID).isPresent()) {
+        if (property.getParameter(Parameter.TZID).isPresent()) {
             var newTimezoneId = getCorrectedTimezoneFromTzParameter(property);
             correctTzParameter(property, newTimezoneId);
         }

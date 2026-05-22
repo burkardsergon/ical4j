@@ -36,15 +36,19 @@ package net.fortuna.ical4j.model;
 import net.fortuna.ical4j.model.component.CalendarComponent;
 import net.fortuna.ical4j.model.property.RecurrenceId;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.text.ParseException;
 import java.time.temporal.Temporal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public interface RecurrenceSupport<T extends CalendarComponent> extends PropertyContainer, Prototype<Component> {
+/**
+ * Interface for calendar components that support recurrence calculations.
+ * This interface provides methods to calculate the recurrence set for a component
+ * based on its start date, recurrence rules, and exception rules.
+ *
+ * @param <T> the type of calendar component that supports recurrence
+ */
+public interface RecurrenceSupport<T extends Component> extends PropertyContainer, Prototype<T> {
 
     /**
      * Calculates the recurrence set for this component using the specified period.
@@ -58,17 +62,16 @@ public interface RecurrenceSupport<T extends CalendarComponent> extends Property
      * to PT0S</p>
      *
      * @param period a range to calculate recurrences for
-     * @return a list of periods
+     * @return a set of periods
      */
-    <T extends Temporal> Set<Period<T>> calculateRecurrenceSet(final Period<? extends Temporal> period);
+    <R extends Temporal> Set<Period<R>> calculateRecurrenceSet(final Period<? extends Temporal> period);
 
-    default List<T> getOccurrences(Period<Temporal> period) throws ParseException, IOException, URISyntaxException {
+    default List<T> getOccurrences(Period<Temporal> period) {
         List<T> occurrences = new ArrayList<>();
 
         Set<Period<Temporal>> periods = RecurrenceSupport.this.calculateRecurrenceSet(period);
         for (Period<Temporal> p : periods) {
-            //noinspection unchecked
-            final T occurrence = (T) this.copy();
+            final T occurrence = this.copy();
             occurrence.add(new RecurrenceId<>(p.getStart()));
             occurrences.add(occurrence);
         }

@@ -32,15 +32,19 @@
  */
 package net.fortuna.ical4j.filter.expression;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
+/**
+ * Represents a string expression in a filter, encapsulating a string value.
+ * This class implements the {@link LiteralExpression} interface and provides methods for equality checking and hashing.
+ */
 public class StringExpression implements LiteralExpression<String> {
 
     public final Object value;
 
-    public StringExpression(@NotNull Object value) {
+    public StringExpression(@NonNull Object value) {
         this.value = value;
     }
 

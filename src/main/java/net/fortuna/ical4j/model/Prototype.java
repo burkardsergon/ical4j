@@ -33,6 +33,10 @@
 
 package net.fortuna.ical4j.model;
 
+/**
+ * A prototype is an object that can be copied to create a new instance.
+ * This is useful for creating new instances of objects that have a specific state or configuration.
+ */
 public interface Prototype<T> {
 
     T copy();

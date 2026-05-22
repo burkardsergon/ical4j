@@ -82,7 +82,7 @@ import java.util.Collections;
 
 public class Link extends Property {
 
-    private static final String PROPERTY_NAME = "LINK";
+    public static final String PROPERTY_NAME = "LINK";
 
     private URI uri;
 
@@ -156,7 +156,7 @@ public class Link extends Property {
 
     @Override
     public ValidationResult validate() throws ValidationException {
-        return null;
+        return ValidationResult.EMPTY;
     }
 
     public static class Factory extends Content.Factory implements PropertyFactory<Link> {

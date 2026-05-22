@@ -39,6 +39,7 @@ import net.fortuna.ical4j.util.Strings;
 import net.fortuna.ical4j.validate.ValidationException;
 import net.fortuna.ical4j.validate.ValidationResult;
 import net.fortuna.ical4j.validate.property.DatePropertyValidator;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.LoggerFactory;
 
 import java.time.ZoneId;
@@ -194,7 +195,7 @@ public abstract class DateProperty<T extends Temporal> extends Property {
             try {
                 if (tzId.isPresent()) {
                     this.date = (TemporalAdapter<T>) TemporalAdapter.parse(value, tzId.get(), timeZoneRegistry);
-                } else if (defaultTimeZone != null) {
+                } else if (defaultTimeZone != null && shouldApplyTimezone()) {
                     this.date = (TemporalAdapter<T>) TemporalAdapter.parse(value, defaultTimeZone);
                 } else {
                     this.date = TemporalAdapter.parse(value, parseFormat);
@@ -276,7 +277,7 @@ public abstract class DateProperty<T extends Temporal> extends Property {
 
     private boolean shouldApplyTimezone() {
         Optional<Value> value = getParameter(VALUE);
-        return !Optional.of(Value.DATE).equals(value);
+        return !Optional.of(Value.DATE).equals(value) && !isUtc();
     }
 
     /**
@@ -305,7 +306,7 @@ public abstract class DateProperty<T extends Temporal> extends Property {
     }
 
     @Override
-    public int compareTo(Property o) {
+    public int compareTo(@NonNull Property o) {
         if (o instanceof DateProperty) {
             return TemporalComparator.INSTANCE.compare(getDate(), ((DateProperty<?>) o).getDate());
         }

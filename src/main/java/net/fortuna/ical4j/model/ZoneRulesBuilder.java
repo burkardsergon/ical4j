@@ -21,6 +21,8 @@ import java.time.zone.ZoneRules;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static net.fortuna.ical4j.model.Property.TZOFFSETFROM;
+
 /**
  * Construct a {@link java.time.zone.ZoneRules} instance from a {@link net.fortuna.ical4j.model.component.VTimeZone}.
  */
@@ -34,7 +36,7 @@ public class ZoneRulesBuilder {
     }
 
     /**
-     * Build a list of transitions for the recognised standard offset. For example, where the standard UTC
+     * Build a list of historical transitions for the recognised standard offset. For example, where the standard UTC
      * offset changes from -7 to -8 permanently.
      * @param observances
      * @return
@@ -55,7 +57,7 @@ public class ZoneRulesBuilder {
 
         for (var observance : sorted) {
             // ignore transitions that have no effect..
-            Optional<TzOffsetFrom> offsetFrom = observance.getTimeZoneOffsetFrom();
+            Optional<TzOffsetFrom> offsetFrom = observance.getProperty(TZOFFSETFROM);
             TzOffsetTo offsetTo = observance.getRequiredProperty(Property.TZOFFSETTO);
             DtStart<LocalDateTime> start = observance.getRequiredProperty("DTSTART");
 
@@ -71,7 +73,8 @@ public class ZoneRulesBuilder {
     }
 
     /**
-     * Build a list of transitions for DST changes. These are typically temporary offset changes every six months.
+     * Build a list of transitions for historical DST changes. These are typically temporary offset changes
+     * every six months.
      * @param observances
      * @return
      */
@@ -79,7 +82,7 @@ public class ZoneRulesBuilder {
         List<ZoneOffsetTransition> transitions = new ArrayList<>();
 
         for (Observance observance : observances) {
-            Optional<TzOffsetFrom> offsetFrom = observance.getTimeZoneOffsetFrom();
+            Optional<TzOffsetFrom> offsetFrom = observance.getProperty(TZOFFSETFROM);
             TzOffsetTo offsetTo = observance.getRequiredProperty(Property.TZOFFSETTO);
 
             // ignore transitions that have no effect..
@@ -108,6 +111,14 @@ public class ZoneRulesBuilder {
         return transitions;
     }
 
+    /**
+     * Build rules for future DST transitions.
+     *
+     * @param observances
+     * @param standardOffset
+     * @return
+     * @throws ConstraintViolationException
+     */
     private List<ZoneOffsetTransitionRule> buildTransitionRules(List<Observance> observances, ZoneOffset standardOffset) throws ConstraintViolationException {
         List<ZoneOffsetTransitionRule> transitionRules = new ArrayList<>();
 
@@ -127,11 +138,13 @@ public class ZoneRulesBuilder {
                 var dayOfWeek = WeekDay.getDayOfWeek(rrule.get().getRecur().getDayList().get(0));
                 var time = LocalTime.from(startDate.getDate());
                 boolean endOfDay = false;
-                var timeDefinition = TimeDefinition.UTC;
+                var timeDefinition = TimeDefinition.WALL;
                 transitionRules.add(ZoneOffsetTransitionRule.of(recurMonth, dayOfMonth, dayOfWeek, time, endOfDay,
                         timeDefinition, standardOffset, offsetFrom.getOffset(), offsetTo.getOffset()));
             }
         }
+        //  Note the order of the list is significant!
+        transitionRules.sort(Comparator.comparing(ZoneOffsetTransitionRule::getMonth));
         return transitionRules;
     }
 
@@ -152,7 +165,7 @@ public class ZoneRulesBuilder {
         TzOffsetTo offsetTo = currentStandard.getRequiredProperty(Property.TZOFFSETTO);
 
         var standardOffset = offsetTo.getOffset();
-        var wallOffset = offsetFrom.getOffset();
+        var wallOffset = offsetTo.getOffset();
 
         List<Standard> stdObservances = vTimeZone.getComponents(Observance.STANDARD);
         List<ZoneOffsetTransition> standardOffsetTransitions = buildStandardOffsetTransitions(stdObservances);

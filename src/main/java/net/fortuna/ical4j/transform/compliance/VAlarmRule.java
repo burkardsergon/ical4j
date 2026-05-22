@@ -40,9 +40,16 @@ import net.fortuna.ical4j.model.property.Description;
 
 import java.util.Optional;
 
+import static net.fortuna.ical4j.model.Property.DESCRIPTION;
+
 /**
- * 
- * 
+ *
+ * A rule that applies compliance transformations to VAlarm elements.
+ * This rule ensures that the action is set to "DISPLAY" and the description
+ * is set to "display" if it is not already present or if the description value
+ * is null.
+ * This rule is based on RFC 5545 compliance requirements.
+ *
  * @author daniel grigore
  * @author corneliu dobrota
  */
@@ -51,7 +58,7 @@ public class VAlarmRule implements Rfc5545ComponentRule<VAlarm> {
     @Override
     public VAlarm apply(VAlarm element) {
         Optional<Action> action = element.getAction();
-        Optional<Description> description = element.getDescription();
+        Optional<Description> description = element.getProperty(DESCRIPTION);
         if (action.isEmpty() || !"DISPLAY".equals(action.get().getValue()) || description.isPresent()
                 && description.get().getValue() != null) {
             return element;

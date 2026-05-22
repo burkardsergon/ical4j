@@ -39,10 +39,8 @@ import net.fortuna.ical4j.validate.ValidationResult;
 import org.apache.commons.codec.EncoderException;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -59,7 +57,7 @@ import java.util.Optional;
  *         <p/>
  *         $Id$ [Apr 5, 2004]
  */
-public abstract class Property extends Content implements Prototype<Property>, Comparable<Property>, FluentProperty {
+public abstract class Property extends Content implements Comparable<Property>, FluentProperty {
 
     private static final long serialVersionUID = 7048785558435608687L;
 
@@ -358,7 +356,7 @@ public abstract class Property extends Content implements Prototype<Property>, C
     public static final String TEL = "TEL";
 
     /**
-     *  Acknowledged Property taken from http://tools.ietf.org/html/draft-daboo-valarm-extensions-04
+     *  Acknowledged Property taken from <a href="http://tools.ietf.org/html/draft-daboo-valarm-extensions-04">draft-daboo-valarm-extensions</a>
      */
     public static final String ACKNOWLEDGED = "ACKNOWLEDGED";
 
@@ -397,6 +395,14 @@ public abstract class Property extends Content implements Prototype<Property>, C
 
     public static final String XML = "XML";
 
+    public static final String ESTIMATED_DURATION = "ESTIMATED-DURATION";
+
+    public static final String REASON = "REASON";
+
+    public static final String SUBSTATE = "SUBSTATE";
+
+    public static final String TASK_MODE = "TASK-MODE";
+
     private final String name;
 
     /**
@@ -415,7 +421,7 @@ public abstract class Property extends Content implements Prototype<Property>, C
         this(aName, new ParameterList());
     }
 
-    protected Property(@NotNull Enum<?> name) {
+    protected Property(@NonNull Enum<?> name) {
         this(name.toString(), new ParameterList());
     }
 
@@ -428,12 +434,12 @@ public abstract class Property extends Content implements Prototype<Property>, C
         this.parameters = aList;
     }
 
-    protected Property(@NotNull Enum<?> name, final ParameterList aList) {
+    protected Property(@NonNull Enum<?> name, final ParameterList aList) {
         this.name = name.toString();
         this.parameters = aList;
     }
 
-    /**
+    /*
      * Creates a deep copy of the specified property. That is, the name, parameter list, and value are duplicated from
      * the specified property. This constructor should only be called from sub-classes to ensure type integrity is
      * maintained.
@@ -527,7 +533,7 @@ public abstract class Property extends Content implements Prototype<Property>, C
      */
     @SuppressWarnings("unchecked")
     public <T extends Property> T add(Parameter parameter) {
-        setParameters((ParameterList) parameters.add(parameter));
+        setParameters(parameters.add(parameter));
         return (T) this;
     }
 
@@ -538,7 +544,7 @@ public abstract class Property extends Content implements Prototype<Property>, C
      */
     @SuppressWarnings("unchecked")
     public <T extends Property> T remove(Parameter parameter) {
-        setParameters((ParameterList) parameters.remove(parameter));
+        setParameters(parameters.remove(parameter));
         return (T) this;
     }
 
@@ -549,7 +555,7 @@ public abstract class Property extends Content implements Prototype<Property>, C
      */
     @SuppressWarnings("unchecked")
     public <T extends Property> T removeAll(String... parameterName) {
-        setParameters((ParameterList) parameters.removeAll(parameterName));
+        setParameters(parameters.removeAll(parameterName));
         return (T) this;
     }
 
@@ -560,7 +566,7 @@ public abstract class Property extends Content implements Prototype<Property>, C
      */
     @SuppressWarnings("unchecked")
     public <T extends Property> T replace(Parameter parameter) {
-        setParameters((ParameterList) parameters.replace(parameter));
+        setParameters(parameters.replace(parameter));
         return (T) this;
     }
 
@@ -584,21 +590,21 @@ public abstract class Property extends Content implements Prototype<Property>, C
         return parameters.getFirst(name);
     }
 
-    public final <P extends Parameter> Optional<P> getParameter(@NotNull Enum<?> name) {
+    public final <P extends Parameter> Optional<P> getParameter(@NonNull Enum<?> name) {
         return getParameter(name.toString());
     }
 
     /**
      * Retrieve a single required parameter.
-     * @param name
-     * @param <P>
-     * @return
+     * @param name parameter name
+     * @param <P> expected parameter type
+     * @return a parameter of the specified type
      */
     public final <P extends Parameter> P getRequiredParameter(final String name) {
         return parameters.getRequired(name);
     }
 
-    public final <P extends Parameter> P getRequiredParameter(@NotNull Enum<?> name) {
+    public final <P extends Parameter> P getRequiredParameter(@NonNull Enum<?> name) {
         return getRequiredParameter(name.toString());
     }
 
@@ -624,7 +630,7 @@ public abstract class Property extends Content implements Prototype<Property>, C
     public boolean equals(final Object arg0) {
         if (arg0 instanceof Property) {
             final var p = (Property) arg0;
-            return getName().equals(p.getName())
+            return getName().equalsIgnoreCase(p.getName())
                     && new EqualsBuilder().append(getValue(), p.getValue()).append(parameters,
                     p.parameters).append(prefix, p.prefix).isEquals();
         }
@@ -660,7 +666,7 @@ public abstract class Property extends Content implements Prototype<Property>, C
     }
 
     @Override
-    public int compareTo(Property o) {
+    public int compareTo(@NonNull Property o) {
         if (this.equals(o)) {
             return 0;
         }
